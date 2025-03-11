@@ -1,0 +1,36 @@
+name: Build, Test
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+      
+      - name: Remplacer les variables dans NuGet.config
+        run: |
+           sed -i "s|{NUGET_USERNAME}|${GITHUB_REPOSITORY_OWNER}|g" nuget.config
+           sed -i "s|{NUGET_PASSWORD}|${{ secrets.GITHUB_TOKEN }}|g" nuget.config
+      
+      - name: Restore dependencies
+        run: dotnet restore BitCrafts.Demo.sln
+
+      - name: Build project
+        run: dotnet build BitCrafts.Demo.sln --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test BitCrafts.Demo.sln --no-restore --verbosity normal
+          
